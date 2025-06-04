@@ -1,59 +1,63 @@
-import Manager from '../models/manager.model';
 import { Request, Response, NextFunction } from 'express';
+import { catchAsync } from '../utils/catchAsync';
+import Manager from '../models/manager.model';
+import { AppError } from '../utils/appError';
 
-export const getAllManagers = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const managers = await Manager.find().select('-password'); // Exclude password
-    res.status(200).json({
-      status: 'success',
-      results: managers.length,
-      data: managers,
-    });
-  } catch (err) {
-    next(err);
+export const getAllManagers = catchAsync(async (req: Request, res: Response) => {
+  const managers = await Manager.find().select('-password'); // Exclude password
+  res.status(200).json({
+    status: 'success',
+    results: managers.length,
+    data: managers,
+  });
+});
+
+export const updateManager = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  // Exclude password from updates
+  const updateData = { ...req.body };
+  delete updateData.password;
+
+  const updatedManager = await Manager.findByIdAndUpdate(id, updateData, {
+    new: true,
+    runValidators: true,
+    select: '-password',
+  });
+
+  if (!updatedManager) {
+    throw new AppError('Manager not found', 404);
   }
-};
 
-export const updateManager = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    // Exclude password from updates
-    const updateData = { ...req.body };
-    delete updateData.password;
+  res.status(200).json({
+    status: 'success',
+    data: updatedManager,
+  });
+});
 
-    const updatedManager = await Manager.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-      select: '-password',
-    });
+export const deleteManager = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const deleted = await Manager.findByIdAndDelete(id);
 
-    if (!updatedManager) {
-      return res.status(404).json({ status: 'error', message: 'Manager not found' });
-    }
-
-    res.status(200).json({
-      status: 'success',
-      data: updatedManager,
-    });
-  } catch (err) {
-    next(err);
+  if (!deleted) {
+    throw new AppError('Manager not found', 404);
   }
-};
 
-export const deleteManager = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.params;
-    const deleted = await Manager.findByIdAndDelete(id);
+  res.status(200).json({
+    status: 'success',
+    message: 'Manager deleted successfully',
+  });
+});
 
-    if (!deleted) {
-      return res.status(404).json({ status: 'error', message: 'Manager not found' });
-    }
+export const fetchManager = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const manager = await Manager.findById(id).select('-password'); // Exclude password
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Manager deleted successfully',
-    });
-  } catch (err) {
-    next(err);
+  if (!manager) {
+    throw new AppError('Manager not found', 404);
   }
-};
+
+  res.status(200).json({
+    status: 'success',
+    data: manager,
+  });
+});

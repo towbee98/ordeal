@@ -1,15 +1,19 @@
 import express from 'express';
-import { getAllManagers, updateManager, deleteManager } from '../controllers/manager.controller';
+import {
+  getAllManagers,
+  updateManager,
+  deleteManager,
+  fetchManager,
+} from '../controllers/manager.controller';
+import { protect, restrictTo } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
-// Get all managers
+router.use(protect);
 router.get('/', getAllManagers);
 
-// Update a manager by ID
-router.patch('/:id', updateManager);
+router.route('/:id').patch(restrictTo('admin'), updateManager).get(fetchManager);
 
-// Delete a manager by ID
-router.delete('/:id', deleteManager);
+router.delete('/:id', restrictTo('admin'), deleteManager);
 
 export default router;

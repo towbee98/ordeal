@@ -17,7 +17,6 @@ declare global {
 
 export const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    // Get token from header
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       res.status(401).json({
@@ -29,10 +28,8 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
 
     const token = authHeader.split(' ')[1];
 
-    // Verify token
     const decoded = verifyToken(token);
 
-    // Check if manager still exists
     const manager = await Manager.findById(decoded.id);
     if (!manager) {
       res.status(401).json({
@@ -42,7 +39,6 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
       return;
     }
 
-    // Add user info to request
     req.user = decoded;
     next();
   } catch (error) {
